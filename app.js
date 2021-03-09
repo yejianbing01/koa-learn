@@ -2,7 +2,7 @@ const Koa = require('koa');
 const mongoose = require('mongoose');
 const Router = require('koa-router');
 const bodyParser = require('koa-bodyparser');
-
+const handler = require('./middleware/handler');
 
 // models
 const users = require('./routes/api/users');
@@ -14,6 +14,7 @@ const db = require('./config/keys').mongoURI;
 const app = new Koa();
 const router = new Router();
 
+app.use(handler);
 app.use(bodyParser());
 
 // 连接数据库

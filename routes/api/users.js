@@ -1,7 +1,6 @@
 const Router = require('koa-router');
 const User = require('../../models/User');
-const bcrypt = require('bcryptjs');
-const gravatar = require('gravatar');
+const tools = require('../../config/tools');
 
 
 const router = new Router();
@@ -22,24 +21,17 @@ router.get('/test', async ctx => {
  * @access 公开的
  */
 router.post('/register', async ctx => {
-    const findRes = await User.find({ email: ctx.request.body.email });
+    const findRes = await User.find({ email: ctx.request.body.code });
     if (findRes.length > 0) {
         ctx.status = 500;
         ctx.body = { msg: '邮箱已被占用' };
     } else {
         const user = new User({
             name: ctx.request.body.name,
-            email: ctx.request.body.email,
-            password: ctx.request.body.password,
-            avatar: gravatar.url(ctx.request.body.email, {
-                s: '200',
-                r: 'pg',
-                d: 'mm'
-            })
+            code: ctx.request.body.code,
+            password: tools.encryptSync(ctx.request.body.password),
+            avatar: tools.getGravatarUrlSync(ctx.request.body.email)
         });
-        // 密码加密
-        const hash = bcrypt.hashSync(user.password, bcrypt.genSaltSync(10));
-        user.password = hash;
         // 插入数据库
         await user
             .save()
