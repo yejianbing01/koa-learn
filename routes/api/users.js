@@ -5,6 +5,7 @@ const passport = require('koa-passport');
 
 // input验证
 const validateRegisterInput = require('../../validation/register');
+const validateLoginInput = require('../../validation/login');
 
 const router = new Router();
 
@@ -19,7 +20,7 @@ router.get('/test', async ctx => {
 });
 
 /**
- * @route GET /api/users/register
+ * @route POST /api/users/register
  * @description 注册接口
  * @access 公开的
  */
@@ -27,7 +28,8 @@ router.post('/register', async ctx => {
     const { errors, isValid } = validateRegisterInput(ctx.request.body);
     if (!isValid) {
         ctx.status = 400;
-        ctx.body = errors;
+        ctx.response.body = errors;
+        return;
     }
 
     const findRes = await User.find({ email: ctx.request.body.email });
@@ -53,8 +55,19 @@ router.post('/register', async ctx => {
     }
 });
 
-
+/**
+ * @route POST /api/users/login
+ * @description 登录接口
+ * @access 公开的
+ */
 router.post('/login', async ctx => {
+    const { errors, isValid } = validateLoginInput(ctx.request.body);
+    if (!isValid) {
+        ctx.status = 400;
+        ctx.response.body = errors;
+        return;
+    }
+
     const user = await User.findOne({ email: ctx.request.body.email });
     const userPassword = user.password;
     const password = ctx.request.body.password;
@@ -63,7 +76,7 @@ router.post('/login', async ctx => {
             const payload = { id: user.id, name: user.name, avatar: user.avatar };
             const token = tools.getToken({ payload });
             ctx.status = 200;
-            ctx.body = { success: true, token: "Bearer " + token };
+            ctx.body = { success: true, token: 'Bearer ' + token };
         } else {
             ctx.status = 400;
             ctx.body = { msg: '密码错误' };
@@ -74,7 +87,11 @@ router.post('/login', async ctx => {
     }
 });
 
-
+/**
+ * @route POST /api/users/current
+ * @description 验证token接口
+ * @access 私有的
+ */
 router.get('/current', passport.authenticate('jwt', { session: false }), async ctx => {
     ctx.body = {
         id: ctx.state.user.id,
